@@ -1,34 +1,47 @@
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 1337;
+const mysql = require('mysql');
 
-var mysql      = require('mysql');
-var connection = mysql.createConnection({
-  host     : 'localhost',
-  user     : 'root',
-  password : '',
-  database : 'ayyqr'
+let con = mysql.createPool({
+    connectionLimit : 10, // default = 10
+    host            : 'localhost',
+    user            : 'root',
+    password        : '',
+    database        : 'ayyqr'
 });
 
-connection.connect();
+app.post('/api/users/signup', function (req, res) {
+    con.getConnection(function (err, conx) {
+        conx.query("INSERT INTO users (username) VALUES ('a')", function (err, rows) {
+            conx.release();
+            if (err) throw err;
+            console.log('Field count:', rows.fieldCount);
+            console.log('Affected rows:', rows.affectedRows);
+            console.log('Changed rows:', rows.changedRows);
+            console.log('Insert ID:', rows.insertId);
+            console.log('Server status:', rows.serverStatus);
+            console.log('Warning count:', rows.warningCount);
+            console.log('Message:', rows.message);
+            console.log('Protocol 41:', rows.protocol41);
 
-function getUsers() {
-    connection.query('SELECT username FROM users WHERE fname=123123', function (error, results, fields) {
-        if (error) throw error;
-        console.log('The solution is: ', results[0].username);
+
+            console.log(JSON.stringify(rows));
+            res.send(JSON.stringify(rows));
+        });
     });
-    return
-}
-
-connection.end();
-
-
-// Main route sends our HTML file
-app.get('/api/hello', (req, res) => {
-    res.send({ express: 'Hello from Express' }, end2);
 });
 
+app.get('/api/users', function (req, res) {
+    con.getConnection(function (err, conx) {
+        conx.query("SELECT * FROM users", function (err, rows) {
+            conx.release();
+            if (err) throw err;
+            console.log('Results:', rows.length);
+            console.log(JSON.stringify(rows));
+            res.send(JSON.stringify(rows));
+        });
+    });
+});
 
-
-// Begin listening
 app.listen(port, () => console.log(`Listening on port ${port}`));
