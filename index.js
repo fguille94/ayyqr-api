@@ -1,9 +1,10 @@
-const express = require('express');
-
-const app = express();
+var app = require('express')();
+var md5 = require('md5');
 const port = process.env.PORT || 1337;
 const mysql = require('mysql');
 let bodyParser = require('body-parser');
+let multer = require('multer'); // v1.0.5
+let upload = multer(); // for parsing multipart/form-data
 
 let con = mysql.createPool({
     connectionLimit : 10, // default = 10
@@ -13,26 +14,47 @@ let con = mysql.createPool({
     database        : 'ayyqr'
 });
 
-
-// create application/json parser
-let jsonParser = bodyParser.json();
-
-// create application/x-www-form-urlencoded parser
-let urlencodedParser = bodyParser.urlencoded({ extended: false });
+app.use(bodyParser.json()); // for parsing application/json
+app.use(bodyParser.urlencoded({ extended: false })); // for parsing application/x-www-form-urlencoded
 
 // POST /login gets urlencoded bodies
-app.post('/login', urlencodedParser, function (req, res) {
-    if (!req.body) return res.sendStatus(400);
-    console.log('welcome, ' + req.body.username);
-    res.send('welcome, ' + req.body.username);
+app.post('/login', upload.array(), function (req, res, next) {
+    if (req.body.loginB && req.body.username && req.body.password) {
+        console.log('Server request:');
+        console.log(req.body);
+        console.log(md5("asd"));
+        console.log('Server response:');
+        con.getConnection(function (err, conx) {
+            conx.query("SELECT * FROM users WHERE " +
+                        "username='" + req.body.username + "'" +
+                        " AND " +
+                        "password='" + md5(req.body.password) + "'"
+                        , function (err, rows) {
+                if (err) throw err;
+                conx.release();
+                console.log('Results:', rows.length);
+                console.log(JSON.stringify(rows));
+                // console.log(res.json(rows));
+                // res.send(JSON.stringify(rows.username));
+                /*
+                res.json(rows);
+                */
+                // /*
+                res.json({
+                    uname: rows[0].username,
+                    login: true
+                    // rows
+                });
+                // */
+            });
+        });
+        // res.json({success: true});
+
+    } else
+        res.json({success: false});
 });
 
-// POST /api/users gets JSON bodies
-app.post('/api/users2', jsonParser, function (req, res) {
-    if (!req.body) return res.sendStatus(400)
-    // create user in req.body
-});
-
+/*
 app.post('/api/users/signup', function (req, res) {
     con.getConnection(function (err, conx) {
         conx.query("SELECT * FROM users WHERE fname=2", function (err, rows) {
@@ -55,7 +77,7 @@ app.post('/api/users/signup', function (req, res) {
         });
     });
 });
-
+*/
 app.get('/api/users', function (req, res) {
     con.getConnection(function (err, conx) {
         conx.query("SELECT * FROM users", function (err, rows) {
@@ -63,7 +85,9 @@ app.get('/api/users', function (req, res) {
             if (err) throw err;
             console.log('Results:', rows.length);
             console.log(JSON.stringify(rows));
-            res.send(JSON.stringify(rows));
+            // console.log(res.json(rows));
+            // res.send(JSON.stringify(rows));
+            res.json(rows);
         });
     });
 });
