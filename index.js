@@ -1,10 +1,10 @@
-var app = require('express')();
-var md5 = require('md5');
-const port = process.env.PORT || 1337;
+var app     = require('express')();
+var md5     = require('md5');
+const port  = process.env.PORT || 1337;
 const mysql = require('mysql');
 let bodyParser = require('body-parser');
-let multer = require('multer'); // v1.0.5
-let upload = multer(); // for parsing multipart/form-data
+let multer  = require('multer'); // v1.0.5
+let upload  = multer(); // for parsing multipart/form-data
 
 let con = mysql.createPool({
     connectionLimit : 10, // default = 10
