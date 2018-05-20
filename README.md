@@ -1,4 +1,4 @@
-# AyyQR-API
+# AyyQR API
 
 ### setup
 ```npm i -g nodemon```
