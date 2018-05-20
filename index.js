@@ -1,3 +1,4 @@
+require('dotenv').config();
 var app     = require('express')();
 var md5     = require('md5');
 const port  = process.env.PORT || 1337;
@@ -5,21 +6,20 @@ const mysql = require('mysql');
 let bodyParser = require('body-parser');
 let multer  = require('multer'); // v1.0.5
 let upload  = multer(); // for parsing multipart/form-data
-var cors = require('cors')
+var cors = require('cors');
 app.use(cors());
+
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: false })); // for parsing application/x-www-form-urlencoded
 
 let con = mysql.createPool({
-    connectionLimit : 10, // default = 10
-    host            : '192.168.1.120',
-    user            : 'root',
-    password        : '',
-    database        : 'prettyafDB'
-    // database        : process.env.DB_NAME
+    connectionLimit : process.env.DB_LIMIT,
+    host            : process.env.DB_HOST,
+    port            : process.env.DB_PORT,
+    user            : process.env.DB_USER,
+    password        : process.env.DB_PWD,
+    database        : process.env.DB_NAME
 });
-
-log(process.env.PORT);
 
 function isEmptyObject(obj) {
     for (var key in obj) {
@@ -28,6 +28,11 @@ function isEmptyObject(obj) {
         }
     }
     return true;
+}
+
+function errHandle(err) {
+    throw err;
+    console.error(err.stack);
 }
 
 function log(obj) {
@@ -46,7 +51,6 @@ function sqlLog(rows) {
 }
 
 app.post('/login', upload.array(), function (req, res, next) {
-    log(req);
     let received;
     log("Host: ", req.headers.host);
     if (!isEmptyObject(req.query)) {
@@ -57,54 +61,36 @@ app.post('/login', upload.array(), function (req, res, next) {
         console.log("body..........");
     }
 
-    // if (received.loginB && received.username && received.password) {
-    if (received.username && received.password) {
-        console.log('Server request:');
+    if (received.loginB && received.username && received.password) {
+        console.log('==== Server request ====');
         console.log(received);
-        console.log(md5(received.password));
-        console.log('Server response:');
+        console.log('==== Server response ====');
         con.getConnection(function (err, conx) {
-            if (err) {
-                throw err;
-                console.error(err.stack);
-            }
-
+            if (err) errHandle(err);
             conx.query("SELECT * FROM users WHERE " +
                         "username='" + received.username + "'" +
                         " AND " +
                         "password='" + md5(received.password) + "'"
                         , function (err, rows) {
-                if (err) {
-                    throw err;
-                    console.error(err.stack);
-                }
-                // if (rows.length => 1) {
+                if (err) errHandle(err);
                 console.log('Results:', rows.length);
                 if (rows.length > 0) {
                     console.log(JSON.stringify(rows));
-                    // console.log(res.json(rows));
-                    // res.send(JSON.stringify(rows.username));
-                    /*
-                    res.json(rows);
-                    */
-                    // /*
                     res.json({
                         uname: rows[0].username,
                         login: true
-                        // rows
                     });
-                    // */
                 } else {
-
+                    res.json({
+                        login: false
+                    });
                 }
-
             });
         });
-        // res.json({success: true});
     } else {
         console.log("Required variables not met");
         console.log(req);
-        res.json({success: false});
+        res.json({ success: false });
     }
 });
 
@@ -125,30 +111,15 @@ app.post('/api/users/signup', function (req, res) {
 */
 
 app.get('/api/users', function (req, res) {
-    /*
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Credentials', true);
-    res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-    */
     con.getConnection(function (err, conx) {
-        if (err) {
-            throw err;
-            console.error(err.stack);
-        }
+        if (err) errHandle(err);
         conx.query("SELECT * FROM users", function (err, rows) {
-
             conx.release();
-            if (err) {
-                throw err;
-                console.error(err.stack);
-            }
-
+            if (err) errHandle(err);
             console.log('Results:', rows.length);
             // sqlLog(rows);
-            log(req.headers.host);
+            log("Host: ", req.headers.host);
             // log(req);
-
             console.log(JSON.stringify(rows));
             // console.log(res.json(rows));
             // res.send(JSON.stringify(rows));
@@ -161,9 +132,4 @@ app.all('*', (req, res) => {
     res.send({ something: 'Hello my ' + req.method + ' friend' })
 });
 
-/*
-app.get('/products/:id', function (req, res, next) {
-    res.json({msg: 'This is CORS-enabled for all origins!'})
-})
-*/
 app.listen(port, () => console.log(`Listening on port ${port}`));
