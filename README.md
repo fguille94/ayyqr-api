@@ -1,7 +1,12 @@
 # AyyQR API
 
 ### setup
-```npm i -g nodemon```
+```shell
+npm i -g nodemon
+```
 
+aaaaaaaaaa
 ### startup
-```npm start```
+```
+npm start
+```

@@ -3,8 +3,13 @@
   "version": "0.1.0",
   "description": "",
   "main": "index.js",
+  "config": {
+    "port": "1111",
+	"domain": "dev.me"
+  },
   "scripts": {
-    "start": "nodemon index.js"
+    "init": "npm i -S -g nodemon",
+    "start": "node index.js --domain $npm_package_config_domain"
   },
   "author": "",
   "license": "MIT",
