@@ -1,17 +1,21 @@
-var mysql = require('mysql')
+var mysql = require('mysql');
+
 var connection = mysql.createConnection({
-  host     : 'localhost',
-  user     : 'root',
-  password : '',
-  database : 'ayyqr'
+  host            : process.env.DB_HOST,
+  port            : process.env.DB_PORT,
+  user            : process.env.DB_USER,
+  password        : process.env.DB_PWD,
+  database        : process.env.DB_NAME
 });
 
-connection.connect();
+let db = mysql.createPool({
+  connectionLimit : process.env.DB_LIMIT,
+  host            : process.env.DB_HOST,
+  port            : process.env.DB_PORT,
+  user            : process.env.DB_USER,
+  password        : process.env.DB_PWD,
+  database        : process.env.DB_NAME
+});
 
-connection.query('SELECT 1 + 1 AS solution', function (err, rows, fields) {
-  if (err) throw err
-
-  console.log('The solution is: ', rows[0].solution)
-})
-
-connection.end();
+// module.exports = connection;
+module.exports = db;
